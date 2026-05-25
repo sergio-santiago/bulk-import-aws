@@ -47,3 +47,23 @@ output "import_records_table_arn" {
   description = "ARN of the import records table."
   value       = aws_dynamodb_table.import_records.arn
 }
+
+output "user_pool_id" {
+  description = "Cognito user pool ID."
+  value       = aws_cognito_user_pool.users.id
+}
+
+output "user_pool_arn" {
+  description = "Cognito user pool ARN. Used by the API Gateway JWT authorizer."
+  value       = aws_cognito_user_pool.users.arn
+}
+
+output "user_pool_client_id" {
+  description = "Cognito app client ID used by the web frontend."
+  value       = aws_cognito_user_pool_client.web.id
+}
+
+output "cognito_hosted_ui_domain" {
+  description = "Base URL of the Cognito hosted UI."
+  value       = "https://${aws_cognito_user_pool_domain.users.domain}.auth.${var.region}.amazoncognito.com"
+}
