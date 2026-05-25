@@ -1,15 +1,34 @@
 AWS_REGION ?= eu-west-1
 PROJECT    ?= bulk-import-aws
 
+LAMBDAS    := api parser worker
+DIST_DIR   := dist
+GO_IMAGE   := golang:1.22
+
 .PHONY: build package fmt tf-init tf-plan tf-apply tf-destroy deploy-web clean
 
-## Compile Go Lambda binaries for linux/arm64
+## Compile Go Lambda binaries for linux/arm64 inside a Docker container
 build:
-	@:
+	@for fn in $(LAMBDAS); do \
+		echo "==> building $$fn"; \
+		docker run --rm \
+			-v "$$PWD/src/$$fn":/src \
+			-w /src \
+			-e GOOS=linux \
+			-e GOARCH=arm64 \
+			-e CGO_ENABLED=0 \
+			$(GO_IMAGE) \
+			sh -c "go mod tidy && go build -o bootstrap ." || exit 1; \
+	done
 
-## Zip Lambda binaries ready for deployment
-package:
-	@:
+## Zip Lambda binaries into dist/ ready for deployment
+package: build
+	@mkdir -p $(DIST_DIR)
+	@for fn in $(LAMBDAS); do \
+		echo "==> packaging $$fn"; \
+		rm -f $(DIST_DIR)/$$fn.zip; \
+		(cd src/$$fn && zip -q -j ../../$(DIST_DIR)/$$fn.zip bootstrap); \
+	done
 
 ## Format Go and Terraform sources
 fmt:
@@ -35,6 +54,9 @@ tf-destroy:
 deploy-web:
 	@:
 
-## Remove local build artefacts
+## Remove local build artefacts (zips and compiled binaries)
 clean:
-	@:
+	@rm -rf $(DIST_DIR)
+	@for fn in $(LAMBDAS); do \
+		rm -f src/$$fn/bootstrap; \
+	done

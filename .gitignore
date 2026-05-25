@@ -4,6 +4,7 @@ dist/
 *.exe
 *.test
 *.out
+src/*/bootstrap
 
 # Terraform
 .terraform/
