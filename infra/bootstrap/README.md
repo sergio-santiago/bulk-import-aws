@@ -1,8 +1,8 @@
 # infra/bootstrap
 
-Bootstrap one-off para `bulk-import-aws`. Crea los recursos previos al stack
-principal: bucket S3 para el state remoto de Terraform y tabla DynamoDB de
-locking.
+Bootstrap one-off para `bulk-import-aws`. Crea el bucket S3 para el state
+remoto de Terraform. El locking se gestiona con S3 nativo (`use_lockfile`),
+sin tabla DynamoDB.
 
 Usa state **local** (el bucket aún no existe cuando se aplica). El fichero
 `terraform.tfstate` queda en este directorio, ignorado por git. Conviene
