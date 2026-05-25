@@ -82,3 +82,18 @@ output "api_endpoint" {
   description = "Base invoke URL of the HTTP API."
   value       = aws_apigatewayv2_stage.default.invoke_url
 }
+
+output "web_bucket_name" {
+  description = "S3 bucket serving the static frontend."
+  value       = aws_s3_bucket.web.id
+}
+
+output "cloudfront_domain" {
+  description = "Public HTTPS URL of the CloudFront distribution."
+  value       = "https://${aws_cloudfront_distribution.web.domain_name}"
+}
+
+output "cloudfront_distribution_id" {
+  description = "Distribution ID, used for cache invalidations."
+  value       = aws_cloudfront_distribution.web.id
+}

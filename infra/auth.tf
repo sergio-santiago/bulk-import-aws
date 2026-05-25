@@ -49,8 +49,6 @@ resource "aws_cognito_user_pool_client" "web" {
   allowed_oauth_flows_user_pool_client = true
   supported_identity_providers         = ["COGNITO"]
 
-  # Placeholder while the CloudFront distribution does not exist. Updated
-  # in the frontend layer with the real distribution domain.
-  callback_urls = ["https://localhost"]
-  logout_urls   = ["https://localhost"]
+  callback_urls = ["https://${aws_cloudfront_distribution.web.domain_name}"]
+  logout_urls   = ["https://${aws_cloudfront_distribution.web.domain_name}"]
 }
