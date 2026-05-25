@@ -1,0 +1,31 @@
+# Go
+bin/
+dist/
+*.exe
+*.test
+*.out
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+tfplan
+crash.log
+crash.*.log
+*.tfvars
+!*.tfvars.example
+
+# Build artefacts
+*.zip
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+
+# Local env
+.env
+.env.local
