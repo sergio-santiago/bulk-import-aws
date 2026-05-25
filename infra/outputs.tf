@@ -27,3 +27,23 @@ output "records_dlq_arn" {
   description = "ARN of the dead-letter queue for failed records."
   value       = aws_sqs_queue.records_dlq.arn
 }
+
+output "imports_table_name" {
+  description = "DynamoDB table holding import headers and their aggregated status."
+  value       = aws_dynamodb_table.imports.name
+}
+
+output "imports_table_arn" {
+  description = "ARN of the imports table."
+  value       = aws_dynamodb_table.imports.arn
+}
+
+output "import_records_table_name" {
+  description = "DynamoDB table holding individual records for each import."
+  value       = aws_dynamodb_table.import_records.name
+}
+
+output "import_records_table_arn" {
+  description = "ARN of the import records table."
+  value       = aws_dynamodb_table.import_records.arn
+}
