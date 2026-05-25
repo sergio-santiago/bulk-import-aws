@@ -77,3 +77,8 @@ output "lambda_function_arns" {
   description = "Map of lambda name to deployed function ARN."
   value       = { for k, v in aws_lambda_function.this : k => v.arn }
 }
+
+output "api_endpoint" {
+  description = "Base invoke URL of the HTTP API."
+  value       = aws_apigatewayv2_stage.default.invoke_url
+}
