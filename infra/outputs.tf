@@ -67,3 +67,13 @@ output "cognito_hosted_ui_domain" {
   description = "Base URL of the Cognito hosted UI."
   value       = "https://${aws_cognito_user_pool_domain.users.domain}.auth.${var.region}.amazoncognito.com"
 }
+
+output "lambda_function_names" {
+  description = "Map of lambda name to deployed function name."
+  value       = { for k, v in aws_lambda_function.this : k => v.function_name }
+}
+
+output "lambda_function_arns" {
+  description = "Map of lambda name to deployed function ARN."
+  value       = { for k, v in aws_lambda_function.this : k => v.arn }
+}
