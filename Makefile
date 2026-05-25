@@ -3,7 +3,7 @@ PROJECT    ?= bulk-import-aws
 
 LAMBDAS    := api parser worker
 DIST_DIR   := dist
-GO_IMAGE   := golang:1.22
+GO_IMAGE   := golang:1.24
 
 .PHONY: build package fmt tf-init tf-plan tf-apply tf-destroy deploy-web clean
 
