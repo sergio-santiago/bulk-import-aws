@@ -1,0 +1,7 @@
+sku,name,price
+PROD-001,Laptop Pro,1299.99
+,Missing SKU,49.99
+PROD-003,Mechanical Keyboard,149.00
+PROD-004,,79.99
+PROD-005,Negative Price,-10.50
+PROD-006,Valid Product,25.00
