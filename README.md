@@ -1,13 +1,14 @@
 # bulk-import-aws
 
-Asynchronous service that ingests CSV files of products and processes them
-record by record on AWS. Users upload a file via a presigned URL, the
-backend parses it in the background and exposes a per-import report with
-the rows that succeeded and the ones that failed with their reason.
+**Serverless bulk CSV ingestion on AWS — asynchronous pipeline, idempotent, deployed with Terraform.**
 
-Built as a fully serverless event-driven pipeline (S3 + Lambda + SQS +
-DynamoDB), deployed with Terraform, and fronted by a single static page
-served from CloudFront.
+Users upload a CSV of products via a presigned URL. The backend parses it
+off-request, validates each row and exposes a per-import report with the
+rows that succeeded and the ones that failed with their reason.
+
+The stack is fully serverless and event-driven: S3 + Lambda + SQS + DynamoDB
+for the pipeline, Cognito + API Gateway for the API, CloudFront for the
+static frontend. Everything is defined as Terraform.
 
 ## Architecture
 
