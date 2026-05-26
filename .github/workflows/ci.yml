@@ -1,0 +1,62 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Deploys are operated locally with the lab SSO session, see README. This
+# workflow only validates terraform and go sources.
+
+jobs:
+  terraform:
+    name: terraform
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.15.4
+
+      - name: fmt
+        run: |
+          terraform -chdir=infra fmt -check -recursive
+          terraform -chdir=infra/bootstrap fmt -check -recursive
+
+      - name: validate main stack
+        run: |
+          terraform -chdir=infra init -backend=false -input=false
+          terraform -chdir=infra validate
+
+      - name: validate bootstrap
+        run: |
+          terraform -chdir=infra/bootstrap init -backend=false -input=false
+          terraform -chdir=infra/bootstrap validate
+
+  go:
+    name: go (${{ matrix.lambda }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        lambda: [api, parser, worker]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+          cache-dependency-path: src/${{ matrix.lambda }}/go.sum
+
+      - name: vet
+        working-directory: src/${{ matrix.lambda }}
+        run: go vet ./...
+
+      - name: build for lambda runtime
+        working-directory: src/${{ matrix.lambda }}
+        env:
+          GOOS: linux
+          GOARCH: arm64
+          CGO_ENABLED: 0
+        run: go build -o /tmp/bootstrap ./...
