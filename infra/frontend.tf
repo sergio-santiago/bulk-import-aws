@@ -104,3 +104,20 @@ resource "aws_s3_bucket_policy" "web" {
   bucket = aws_s3_bucket.web.id
   policy = data.aws_iam_policy_document.web.json
 }
+
+locals {
+  index_html = templatefile("${path.module}/../web/index.html", {
+    api_endpoint      = aws_apigatewayv2_stage.default.invoke_url
+    cognito_domain    = "https://${aws_cognito_user_pool_domain.users.domain}.auth.${var.region}.amazoncognito.com"
+    cognito_client_id = aws_cognito_user_pool_client.web.id
+    redirect_uri      = "https://${aws_cloudfront_distribution.web.domain_name}"
+  })
+}
+
+resource "aws_s3_object" "index_html" {
+  bucket       = aws_s3_bucket.web.id
+  key          = "index.html"
+  content      = local.index_html
+  content_type = "text/html; charset=utf-8"
+  etag         = md5(local.index_html)
+}

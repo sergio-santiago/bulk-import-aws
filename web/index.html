@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bulk Import</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; color: #222; }
+    h1 { margin-top: 0; }
+    button { background: #2563eb; color: white; border: 0; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-size: 1rem; }
+    button:hover { background: #1d4ed8; }
+    button.secondary { background: transparent; color: #2563eb; padding: 0.4rem 0.6rem; }
+    section { margin: 1.5rem 0; padding: 1rem; border: 1px solid #e5e7eb; border-radius: 6px; }
+    [hidden] { display: none !important; }
+    .row { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+    code { background: #f3f4f6; padding: 0.1rem 0.3rem; border-radius: 3px; font-size: 0.9em; }
+    table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+    th, td { text-align: left; padding: 0.4rem 0.6rem; border-bottom: 1px solid #e5e7eb; font-size: 0.9rem; }
+    th { background: #f9fafb; }
+  </style>
+</head>
+<body>
+  <h1>Bulk Import</h1>
+
+  <section id="signed-out">
+    <p>Sign in to upload a CSV of products.</p>
+    <button id="signin">Sign in</button>
+  </section>
+
+  <section id="signed-in" hidden>
+    <p class="row">
+      <span>Signed in as <code id="email"></code></span>
+      <button class="secondary" id="signout">Sign out</button>
+    </p>
+    <p>CSV header must be <code>sku,name,price</code>.</p>
+    <div class="row">
+      <input type="file" id="file" accept=".csv">
+      <button id="upload">Upload</button>
+    </div>
+  </section>
+
+  <section id="result" hidden>
+    <h2>Import <code id="rid"></code></h2>
+    <p>Status: <strong id="rstatus"></strong></p>
+    <p>Total: <span id="rtotal"></span> · Succeeded: <span id="rsucceeded"></span> · Failed: <span id="rfailed"></span></p>
+    <p id="rduplicate" hidden>Duplicate of <code id="rduplicateof"></code>. No records were re-imported.</p>
+    <div id="rerrors"></div>
+  </section>
+
+  <script>
+    var CONFIG = {
+      apiEndpoint: "${api_endpoint}",
+      cognitoDomain: "${cognito_domain}",
+      cognitoClientId: "${cognito_client_id}",
+      redirectUri: "${redirect_uri}"
+    };
+  </script>
+
+  <script>
+    function trimSlash(s) { return s.replace(/\/+$/, ""); }
+
+    var apiBase = trimSlash(CONFIG.apiEndpoint);
+    var cognitoBase = trimSlash(CONFIG.cognitoDomain);
+    var redirectUri = trimSlash(CONFIG.redirectUri);
+
+    function decodeJwt(token) {
+      try {
+        var payload = token.split(".")[1];
+        var json = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));
+        return JSON.parse(json);
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function getTokens() {
+      var raw = localStorage.getItem("tokens");
+      return raw ? JSON.parse(raw) : null;
+    }
+
+    function setTokens(t) { localStorage.setItem("tokens", JSON.stringify(t)); }
+    function clearTokens() { localStorage.removeItem("tokens"); }
+
+    function signIn() {
+      var url = cognitoBase + "/login"
+        + "?client_id=" + encodeURIComponent(CONFIG.cognitoClientId)
+        + "&response_type=code"
+        + "&scope=" + encodeURIComponent("openid email")
+        + "&redirect_uri=" + encodeURIComponent(redirectUri);
+      window.location.assign(url);
+    }
+
+    function signOut() {
+      clearTokens();
+      var url = cognitoBase + "/logout"
+        + "?client_id=" + encodeURIComponent(CONFIG.cognitoClientId)
+        + "&logout_uri=" + encodeURIComponent(redirectUri);
+      window.location.assign(url);
+    }
+
+    async function exchangeCode(code) {
+      var body = new URLSearchParams();
+      body.set("grant_type", "authorization_code");
+      body.set("client_id", CONFIG.cognitoClientId);
+      body.set("code", code);
+      body.set("redirect_uri", redirectUri);
+      var res = await fetch(cognitoBase + "/oauth2/token", {
+        method: "POST",
+        headers: { "content-type": "application/x-www-form-urlencoded" },
+        body: body.toString()
+      });
+      if (!res.ok) throw new Error("token exchange failed: " + res.status);
+      return await res.json();
+    }
+
+    async function apiCall(path, opts) {
+      var tokens = getTokens();
+      if (!tokens) throw new Error("not signed in");
+      var headers = Object.assign({}, (opts && opts.headers) || {}, {
+        "authorization": "Bearer " + tokens.id_token
+      });
+      var res = await fetch(apiBase + path, Object.assign({}, opts, { headers: headers }));
+      if (!res.ok) {
+        var msg = await res.text();
+        throw new Error("api " + path + " failed: " + res.status + " " + msg);
+      }
+      return await res.json();
+    }
+
+    async function uploadFile(file) {
+      var created = await apiCall("/imports", { method: "POST" });
+      var put = await fetch(created.upload_url, { method: "PUT", body: file });
+      if (!put.ok) throw new Error("upload to s3 failed: " + put.status);
+      return created.import_id;
+    }
+
+    function renderResult(detail) {
+      document.getElementById("rid").textContent = detail.import_id;
+      document.getElementById("rstatus").textContent = detail.status;
+      document.getElementById("rtotal").textContent = detail.total;
+      document.getElementById("rsucceeded").textContent = detail.succeeded;
+      document.getElementById("rfailed").textContent = detail.failed;
+
+      if (detail.duplicate_of) {
+        document.getElementById("rduplicate").hidden = false;
+        document.getElementById("rduplicateof").textContent = detail.duplicate_of;
+      } else {
+        document.getElementById("rduplicate").hidden = true;
+      }
+
+      var errs = document.getElementById("rerrors");
+      errs.innerHTML = "";
+      if (detail.failed_records && detail.failed_records.length) {
+        var table = document.createElement("table");
+        table.innerHTML = "<thead><tr><th>Row</th><th>SKU</th><th>Error</th></tr></thead>";
+        var tbody = document.createElement("tbody");
+        detail.failed_records.forEach(function (r) {
+          var tr = document.createElement("tr");
+          var row = document.createElement("td"); row.textContent = r.row || "";
+          var sku = document.createElement("td"); sku.textContent = r.sku || "";
+          var err = document.createElement("td"); err.textContent = r.error || "";
+          tr.appendChild(row); tr.appendChild(sku); tr.appendChild(err);
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        errs.appendChild(table);
+      }
+    }
+
+    async function pollUntilDone(importID) {
+      document.getElementById("result").hidden = false;
+      while (true) {
+        var detail = await apiCall("/imports/" + encodeURIComponent(importID));
+        renderResult(detail);
+        if (detail.status === "done" || detail.status === "failed") return;
+        await new Promise(function (r) { setTimeout(r, 2000); });
+      }
+    }
+
+    function showSignedIn() {
+      var tokens = getTokens();
+      var claims = decodeJwt(tokens.id_token);
+      document.getElementById("email").textContent = claims && claims.email ? claims.email : "user";
+      document.getElementById("signed-out").hidden = true;
+      document.getElementById("signed-in").hidden = false;
+    }
+
+    function showSignedOut() {
+      document.getElementById("signed-out").hidden = false;
+      document.getElementById("signed-in").hidden = true;
+      document.getElementById("result").hidden = true;
+    }
+
+    async function init() {
+      document.getElementById("signin").addEventListener("click", signIn);
+      document.getElementById("signout").addEventListener("click", signOut);
+      document.getElementById("upload").addEventListener("click", async function () {
+        var input = document.getElementById("file");
+        if (!input.files || !input.files[0]) { alert("Pick a CSV first"); return; }
+        try {
+          var importID = await uploadFile(input.files[0]);
+          await pollUntilDone(importID);
+        } catch (e) {
+          alert(e.message);
+        }
+      });
+
+      var params = new URLSearchParams(window.location.search);
+      var code = params.get("code");
+      if (code) {
+        try {
+          var tokens = await exchangeCode(code);
+          setTokens(tokens);
+          window.history.replaceState({}, "", redirectUri);
+          showSignedIn();
+          return;
+        } catch (e) {
+          alert("Sign in failed: " + e.message);
+        }
+      }
+
+      if (getTokens()) {
+        showSignedIn();
+      } else {
+        showSignedOut();
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
