@@ -9,3 +9,9 @@ variable "region" {
   type        = string
   default     = "eu-west-1"
 }
+
+variable "owner" {
+  description = "Owner contact used in the Owner tag for FinOps attribution."
+  type        = string
+  default     = "sersanhen@gmail.com"
+}

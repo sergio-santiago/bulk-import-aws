@@ -1,27 +1,30 @@
 # infra/bootstrap
 
-Bootstrap one-off para `bulk-import-aws`. Crea el bucket S3 para el state
-remoto de Terraform. El locking se gestiona con S3 nativo (`use_lockfile`),
-sin tabla DynamoDB.
+One-off bootstrap for `bulk-import-aws`. Creates the S3 bucket that holds
+the remote Terraform state for the main stack. State locking is handled
+natively by S3 via `use_lockfile`, so there is no separate DynamoDB lock
+table.
 
-Usa state **local** (el bucket aún no existe cuando se aplica). El fichero
-`terraform.tfstate` queda en este directorio, ignorado por git. Conviene
-guardarlo aparte si quieres poder destruir el bootstrap más adelante.
+This stack uses **local** state (the remote bucket does not exist yet when
+it is first applied). The resulting `terraform.tfstate` file lives in this
+directory and is ignored by git. Keep a copy somewhere safe if you ever
+want to destroy the bootstrap.
 
-## Restricciones del entorno
+## Lab account constraints
 
-Este proyecto se despliega contra una cuenta AWS de tipo lab con permisos IAM
-muy limitados (no se pueden crear roles, users, OIDC providers ni access keys).
-Por eso el bootstrap **no** crea un rol para GitHub Actions ni configuración
-OIDC. El despliegue se opera localmente con la sesión SSO; la CI/CD se limita
-a validación de Terraform y linting (ver README raíz para detalles).
+The project deploys against a sandbox AWS account with restricted IAM:
+roles, users, OIDC providers and access keys cannot be created. As a
+consequence the bootstrap deliberately does **not** provision a GitHub
+Actions role or OIDC configuration. Deploys are operated locally with the
+SSO session and CI is limited to validation and linting. See the root
+README for the full picture.
 
-## Pre-requisitos
+## Prerequisites
 
 - Terraform >= 1.6.
-- AWS CLI con perfil SSO activo apuntando a la cuenta destino.
+- AWS CLI with an active SSO profile pointing at the target account.
 
-## Aplicación
+## Apply
 
 ```bash
 export AWS_PROFILE=lab-sergio
@@ -32,11 +35,11 @@ terraform plan
 terraform apply
 ```
 
-## Destrucción
+## Destroy
 
 ```bash
 terraform destroy
 ```
 
-Si el bucket de state tiene objetos (state del stack principal), vaciarlo
-manualmente antes. Sin objetos, `destroy` borra todo limpiamente.
+If the state bucket has objects (the main stack's state), empty it first.
+With an empty bucket, `destroy` removes everything cleanly.

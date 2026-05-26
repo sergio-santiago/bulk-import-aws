@@ -16,6 +16,7 @@ provider "aws" {
     tags = {
       Project     = var.project
       Environment = "bootstrap"
+      Owner       = var.owner
       ManagedBy   = "terraform"
     }
   }

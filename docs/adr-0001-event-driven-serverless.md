@@ -54,7 +54,7 @@ partial failures than plain SQS + Lambda.
 
 **Hybrid: API on Lambda, workers on Fargate.** Useful when workers need
 long execution, large memory or background concurrency unsupported by
-Lambda. Discarded because each record processes in milliseconds; Lambda’s
+Lambda. Discarded because each record processes in milliseconds; Lambda's
 15-minute limit and 256 MB memory are not even close to being a
 constraint.
 
