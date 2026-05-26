@@ -2,8 +2,9 @@ locals {
   lambdas = {
     api = {
       environment = {
-        IMPORTS_TABLE  = aws_dynamodb_table.imports.name
-        UPLOADS_BUCKET = aws_s3_bucket.uploads.id
+        IMPORTS_TABLE        = aws_dynamodb_table.imports.name
+        IMPORT_RECORDS_TABLE = aws_dynamodb_table.import_records.name
+        UPLOADS_BUCKET       = aws_s3_bucket.uploads.id
       }
     }
     parser = {
