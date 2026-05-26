@@ -15,3 +15,9 @@ variable "environment" {
   type        = string
   default     = "prod"
 }
+
+variable "owner" {
+  description = "Owner contact used in the Owner tag for FinOps attribution."
+  type        = string
+  default     = "sersanhen@gmail.com"
+}
