@@ -1,5 +1,7 @@
 # bulk-import-aws
 
+[![CI](https://github.com/sergio-santiago/bulk-import-aws/actions/workflows/ci.yml/badge.svg)](https://github.com/sergio-santiago/bulk-import-aws/actions/workflows/ci.yml)
+
 **Serverless bulk CSV ingestion on AWS — asynchronous pipeline, idempotent, deployed with Terraform.**
 
 Users upload a CSV of products via a presigned URL. The backend parses it
