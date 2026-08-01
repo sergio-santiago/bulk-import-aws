@@ -38,9 +38,11 @@ stack and the alternatives that were evaluated.
 
 ## Lab account constraints
 
-The project deploys against a sandbox AWS account (AWS Academy / SSO) with
-restricted IAM: roles, users and OIDC providers cannot be created. Two
-adaptations follow from that:
+The project was deployed against a sandbox AWS account (AWS Academy / SSO) with
+restricted IAM: roles, users and OIDC providers cannot be created. That account
+was disposed of when the course ended, so there is no live environment to visit
+and the stack would need a fresh account to run again. Two adaptations follow
+from those constraints:
 
 - All Lambdas share `studentLambdaExecutionRole`, the role pre-provisioned
   in the lab. S3 access is granted from the resource side, via a bucket
@@ -59,7 +61,8 @@ CLI with an active SSO session.
 ```bash
 export AWS_PROFILE=lab-sergio
 
-# one-off: tfstate bucket
+# one-off: tfstate bucket. Its name embeds the account id, so the main
+# stack reads it from this stack's output instead of hardcoding it.
 cd infra/bootstrap
 terraform init
 terraform apply

@@ -19,6 +19,11 @@ Actions role or OIDC configuration. Deploys are operated locally with the
 SSO session and CI is limited to validation and linting. See the root
 README for the full picture.
 
+The bucket name is `<project>-tfstate-<account-id>`, built from the caller
+identity, and exposed as the `state_bucket` output. The main stack does not
+commit that name: `make tf-init` reads this output and passes it through
+`terraform init -backend-config`.
+
 ## Prerequisites
 
 - Terraform >= 1.6.

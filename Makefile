@@ -2,6 +2,11 @@ AWS_REGION ?= eu-west-1
 AWS_PROFILE ?= lab-sergio
 PROJECT    ?= bulk-import-aws
 
+# Remote state bucket, created by infra/bootstrap. Its name embeds the account
+# id, so it is resolved at run time rather than committed. Override to target
+# another account.
+TF_STATE_BUCKET ?= $(shell cd infra/bootstrap 2>/dev/null && terraform output -raw state_bucket 2>/dev/null)
+
 LAMBDAS    := api parser worker
 DIST_DIR   := dist
 GO_IMAGE   := golang:1.24
@@ -44,7 +49,11 @@ fmt:
 
 ## Initialise Terraform with the remote backend
 tf-init:
-	cd infra && terraform init -input=false
+	@test -n "$(TF_STATE_BUCKET)" || { \
+		echo "TF_STATE_BUCKET is empty. Apply infra/bootstrap first, or set it explicitly."; \
+		exit 1; \
+	}
+	cd infra && terraform init -input=false -backend-config="bucket=$(TF_STATE_BUCKET)"
 
 ## Show the Terraform plan for the current stack
 tf-plan:

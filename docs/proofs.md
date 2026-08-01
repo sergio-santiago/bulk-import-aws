@@ -16,7 +16,7 @@ AWS_PROFILE=lab-sergio ./scripts/prove-dlq.sh
 Upload of `samples/with-errors.csv` (6 rows: 3 valid, 3 invalid).
 
 ```
-==> uploading samples/with-errors.csv to s3://bulk-import-aws-uploads-883099621748/uploads/demo-user-failure/proof-failure-1779804520
+==> uploading samples/with-errors.csv to s3://bulk-import-aws-uploads-<ACCOUNT_ID>/uploads/demo-user-failure/proof-failure-1779804520
 ==> polling for completion
   [01] status=None
   [02] status=done
@@ -117,7 +117,7 @@ CloudWatch alarm state after the DLQ filled up:
 Alarm history confirms the SNS topic was notified:
 
 ```
-{ "Type": "Action",       "Summary": "Successfully executed action arn:aws:sns:eu-west-1:883099621748:bulk-import-aws-alerts" }
+{ "Type": "Action",       "Summary": "Successfully executed action arn:aws:sns:eu-west-1:<ACCOUNT_ID>:bulk-import-aws-alerts" }
 { "Type": "StateUpdate",  "Summary": "Alarm updated from OK to ALARM" }
 ```
 
