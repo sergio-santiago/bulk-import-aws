@@ -1,0 +1,2 @@
+# Written by terraform init, not by hand.
+infra/.terraform.lock.hcl linguist-generated=true
