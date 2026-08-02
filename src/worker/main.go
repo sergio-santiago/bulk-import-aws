@@ -46,10 +46,17 @@ var (
 	ddb                *dynamodb.Client
 	importsTable       string
 	importRecordsTable string
-	logger             *slog.Logger
+
+	// Ready before main runs, so it is never nil: the handlers log on paths
+	// the tests exercise without any AWS client in play.
+	logger = slog.New(slog.NewJSONHandler(os.Stdout, nil))
 )
 
-func init() {
+// setup builds the AWS clients and reads the configuration. It is called from
+// main rather than from init so that the test binary never builds a client it
+// has no use for. Lambda still pays for it during the init phase, before the
+// first invocation, which is where the free CPU burst is.
+func setup() {
 	cfg, err := config.LoadDefaultConfig(context.Background())
 	if err != nil {
 		log.Fatalf("loading aws config: %v", err)
@@ -57,7 +64,6 @@ func init() {
 	ddb = dynamodb.NewFromConfig(cfg)
 	importsTable = os.Getenv("IMPORTS_TABLE")
 	importRecordsTable = os.Getenv("IMPORT_RECORDS_TABLE")
-	logger = slog.New(slog.NewJSONHandler(os.Stdout, nil))
 }
 
 func handler(ctx context.Context, event events.SQSEvent) (events.SQSEventResponse, error) {
@@ -224,5 +230,6 @@ func markDone(ctx context.Context, importID string) error {
 }
 
 func main() {
+	setup()
 	lambda.Start(handler)
 }

@@ -21,18 +21,14 @@ export AWS_REGION
 # The whole repository is mounted rather than just the module, because the
 # parser's tests read the CSVs in samples/ and assert on what they parse to.
 #
-# Each package builds its AWS clients in init(), which runs before any test
-# does. Pinning the region and switching off the instance metadata probe keeps
-# that from waiting on a lookup that cannot succeed off an EC2 instance. No test
-# here talks to AWS.
+# No AWS credentials or region are needed: the clients are built from main,
+# which the test binary never calls.
 test:
 	@for fn in $(LAMBDAS); do \
 		echo "==> testing $$fn"; \
 		docker run --rm \
 			-v "$$PWD":/repo \
 			-w /repo/src/$$fn \
-			-e AWS_REGION=$(AWS_REGION) \
-			-e AWS_EC2_METADATA_DISABLED=true \
 			$(GO_IMAGE) \
 			go test ./... || exit 1; \
 	done

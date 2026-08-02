@@ -6,12 +6,8 @@ import (
 )
 
 // These tests cover the pure half of the parser: the key layout, CSV decoding
-// and the hash behind idempotency. Nothing here reaches AWS.
-//
-// The package does build its AWS clients in init(), which runs before any test
-// does, so `make test` and CI pin AWS_REGION and switch off the instance
-// metadata probe. Without that, a machine with no instance role spends a second
-// per module waiting for a lookup that cannot succeed.
+// and the hash behind idempotency. Nothing here reaches AWS, and nothing here
+// needs credentials: the clients are built from main, not from init.
 
 func TestParseKey(t *testing.T) {
 	tests := []struct {
