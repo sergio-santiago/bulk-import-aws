@@ -14,7 +14,28 @@ GO_IMAGE   := golang:1.24
 export AWS_PROFILE
 export AWS_REGION
 
-.PHONY: build package fmt tf-init tf-plan tf-apply tf-destroy deploy-web clean
+.PHONY: build test package fmt tf-init tf-plan tf-apply tf-destroy deploy-web clean
+
+## Run the Go unit tests for every Lambda
+#
+# The whole repository is mounted rather than just the module, because the
+# parser's tests read the CSVs in samples/ and assert on what they parse to.
+#
+# Each package builds its AWS clients in init(), which runs before any test
+# does. Pinning the region and switching off the instance metadata probe keeps
+# that from waiting on a lookup that cannot succeed off an EC2 instance. No test
+# here talks to AWS.
+test:
+	@for fn in $(LAMBDAS); do \
+		echo "==> testing $$fn"; \
+		docker run --rm \
+			-v "$$PWD":/repo \
+			-w /repo/src/$$fn \
+			-e AWS_REGION=$(AWS_REGION) \
+			-e AWS_EC2_METADATA_DISABLED=true \
+			$(GO_IMAGE) \
+			go test ./... || exit 1; \
+	done
 
 ## Compile Go Lambda binaries for linux/arm64 inside a Docker container
 build:

@@ -53,6 +53,16 @@ jobs:
         working-directory: src/${{ matrix.lambda }}
         run: go vet ./...
 
+      # Each package builds its AWS clients in init(), which runs before any
+      # test does. The region and the metadata switch keep that from waiting on
+      # a lookup the runner cannot answer. No test here talks to AWS.
+      - name: test
+        working-directory: src/${{ matrix.lambda }}
+        env:
+          AWS_REGION: eu-west-1
+          AWS_EC2_METADATA_DISABLED: "true"
+        run: go test ./...
+
       - name: build for lambda runtime
         working-directory: src/${{ matrix.lambda }}
         env:

@@ -48,10 +48,30 @@ from those constraints:
   in the lab. S3 access is granted from the resource side, via a bucket
   policy on the uploads bucket. In a real account each Lambda would get
   its own role with scoped statements.
-- CI runs in GitHub Actions but does not deploy. The workflow only
-  validates Terraform (`fmt`, `validate`) and builds the Go binaries.
-  `terraform apply` and Lambda package uploads are operated locally with
-  the SSO session.
+- CI runs in GitHub Actions but does not deploy. The workflow validates
+  Terraform (`fmt`, `validate`), then vets, tests and builds the Go
+  binaries. `terraform apply` and Lambda package uploads are operated
+  locally with the SSO session.
+
+## Tests
+
+```bash
+make test
+```
+
+Unit tests over the pure half of each Lambda: the S3 key layout, CSV decoding
+and the hash behind idempotency in the parser, the validation rules in the
+worker, and the response shape in the API. They run in the same Docker image
+the build uses, and none of them reach outside the process.
+
+Between them they pin the boundary the two halves of the pipeline share.
+Structure is fatal to the parser: a row with the wrong number of columns fails
+the whole file. Content is not: blank fields, and a price that will not parse,
+travel on as they are and the worker turns them down one row at a time. That is
+deliberate, and it is why one bad row costs a row rather than an import. The
+CSVs under `samples/` are the fixtures for both sides of it.
+
+CI runs the tests for all three Lambdas on every push and pull request.
 
 ## Deploy
 
